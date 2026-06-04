@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحدي الـ 50 الذكي: من هو؟ 🕵️‍♂️</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background: #121214; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .header { text-align: center; max-width: 600px; margin-bottom: 20px; }
+        .header h1 { color: #38ef7d; font-size: 26px; margin-bottom: 8px; }
+        .header p { color: #aaa; font-size: 14px; }
+
+        /* قوائم التحكم واختيار الكاتوقيري */
+        .controls { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 20px; }
+        .select-style { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #2a2a35; color: white; font-size: 16px; font-weight: bold; text-align: center; cursor: pointer; }
+        
+        /* صندوق اللاعب المختار سرياً */
+        .secret-box { background: #1e1e24; border: 2px dashed #fbc531; border-radius: 12px; padding: 15px; width: 100%; max-width: 500px; text-align: center; font-weight: bold; font-size: 16px; }
+        #chosen-item-name { color: #fbc531; font-size: 19px; }
+
+        /* شبكة العرض (أربع كروت في السطر للابتوب وتتعدل تلقائياً للجوال) */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; width: 100%; max-width: 800px; margin-top: 20px; }
+        
+        /* كرت العنصر */
+        .item-card { background: #1e1e24; border-radius: 10px; overflow: hidden; position: relative; cursor: pointer; transition: all 0.2s ease; border: 2px solid #2a2a35; text-align: center; }
+        .item-card img { width: 100%; height: 110px; object-fit: cover; display: block; filter: grayscale(0); opacity: 1; transition: 0.2s; background: #121214; }
+        .item-card p { padding: 8px; font-size: 13px; font-weight: bold; background: #222; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* تأثير التشطيب والاستبعاد */
+        .item-card.eliminated { border-color: #ea2027; }
+        .item-card.eliminated img { filter: grayscale(1) blur(2px); opacity: 0.15; }
+        .item-card.eliminated p { background: #4d1b1b; color: #888; text-decoration: line-through; }
+
+        /* زر إعادة اللعب */
+        .btn-reset { background: #ea2027; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 20px; width: 100%; max-width: 500px; transition: 0.2s; }
+        .btn-reset:hover { background: #ff3838; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🕵️‍♂️ لعبة التخمين والتشطيب الكبرى</h1>
+        <p>اختر القسم، اسأل خصمك في الحقيقة، واشطب على الكروت المستبعدة بالضغط عليها!</p>
+    </div>
+
+    <div class="controls">
+        <select id="category-selector" class="select-style" onchange="switchCategory()">
+            <option value="footballers">⚽ قسم: لاعبين كرة قدم (50 لاعب)</option>
+            <option value="food">🍕 قسم: أكلات شهية (50 أكلة)</option>
+            <option value="youtubers">🎬 قسم: يوتيوبرز ومشاهير (50 يوتيوبر)</option>
+            <option value="characters">🦸‍♂️ قسم: شخصيات متنوعة (50 شخصية)</option>
+        </select>
+        
+        <div class="secret-box" id="secret-container">
+            💡 اضغط مرتين (Double Tap) على أي كرت لتحديده كـ "اختيارك السري"
+        </div>
+    </div>
+
+    <div class="grid" id="game-grid"></div>
+
+    <button class="btn-reset" onclick="resetGame()">إعادة تصفير اللوحة الحالية 🔄</button>
+
+    <script>
+        // قاعدة البيانات الكبرى - 4 أقسام في كل قسم 50 قالب جاهز للتعديل
+        const gameDatabase = {
+            footballers: [
+                { name: "لاعب 1", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 2", img: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=150" },
+                { name: "لاعب 3", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 4", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 5", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 6", img: "https://images.unsplash.com/photo-1516567727245-ad8c68f3ec93?w=150" },
+                { name: "لاعب 7", img: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=150" },
+                { name: "لاعب 8", img: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=150" },
+                { name: "لاعب 9", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 10", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 11", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 12", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 13", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 14", img: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=150" },
+                { name: "لاعب 15", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 16", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 17", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 18", img: "https://images.unsplash.com/photo-1516567727245-ad8c68f3ec93?w=150" },
+                { name: "لاعب 19", img: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=150" },
+                { name: "لاعب 20", img: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=150" },
+                { name: "لاعب 21", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 22", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 23", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 24", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 25", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 26", img: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=150" },
+                { name: "لاعب 27", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 28", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 29", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 30", img: "https://images.unsplash.com/photo-1516567727245-ad8c68f3ec93?w=150" },
+                { name: "لاعب 31", img: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=150" },
+                { name: "لاعب 32", img: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=150" },
+                { name: "لاعب 33", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 34", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 35", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 36", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 37", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 38", img: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=150" },
+                { name: "لاعب 39", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 40", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 41", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 42", img: "https://images.unsplash.com/photo-1516567727245-ad8c68f3ec93?w=150" },
+                { name: "لاعب 43", img: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=150" },
+                { name: "لاعب 44", img: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=150" },
+                { name: "لاعب 45", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=150" },
+                { name: "لاعب 46", img: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=150" },
+                { name: "لاعب 47", img: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=150" },
+                { name: "لاعب 48", img: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=150" },
+                { name: "لاعب 49", img: "https://images.unsplash.com/photo-1516567727245-ad8c68f3ec93?w=150" },
+                { name: "لاعب 50", img: "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=150" }
+            ],
+            food: [
+                { name: "أكلة 1", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150" },
+                { name: "أكلة 2", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150" },
+                { name: "أكلة 3", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=150" },
+                { name: "أكلة 4", img: "https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=150" },
+                { name: "أكلة 5", img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=150" },
+                // ... تم تكرار الـ 50 تلقائياً لتوفير المساحة في العرض، جاهزة في الكود الفعلي تحت
+                ...Array.from({length: 45}, (_, i) => ({ name: `أكلة ${i+6}`, img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=150" }))
+            ],
+            youtubers: [
+                { name: "يوتيوبر 1", img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=150" },
+                { name: "يوتيوبر 2", img: "https://images.unsplash.com/photo-1618519764620-7403abdbfee9?w=150" },
+                { name: "يوتيوبر 3", img: "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=150" },
+                ...Array.from({length: 47}, (_, i) => ({ name: `يوتيوبر ${i+4}`, img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=150" }))
+            ],
+            characters: [
+                { name: "شخصية 1", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+                { name: "شخصية 2", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+                { name: "شخصية 3", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" },
+                ...Array.from({length: 47}, (_, i) => ({ name: `شخصية ${i+4}`, img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" }))
+            ]
+        };
+
+        const grid = document.getElementById('game-grid');
+        const secretContainer = document.getElementById('secret-container');
+        const categorySelector = document.getElementById('category-selector');
+
+        function renderGrid() {
+            grid.innerHTML = "";
+            const currentCategory = categorySelector.value;
+            const items = gameDatabase[currentCategory];
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "item-card";
+                card.innerHTML = `
+                    <img src="${item.img}" alt="${item.name}">
+                    <p>${item.name}</p>
+                `;
+
+                // ضغطة واحدة: تشطيب واستبعاد
+                card.onclick = function() {
+                    card.classList.toggle('eliminated');
+                };
+
+                // ضغطتين متتاليتين: اختيار العنصر السري
+                card.ondblclick = function() {
+                    secretContainer.innerHTML = `🔒 اختيارك السري الحالي: <span id="chosen-item-name">${item.name}</span>`;
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        function switchCategory() {
+            secretContainer.innerHTML = "💡 اضغط مرتين (Double Tap) على أي كرت لتحديده كـ \"اختيارك السري\"";
+            renderGrid();
+        }
+
+        function resetGame() {
+            renderGrid();
+        }
+
+        // تشغيل اللعبة لأول مرة
+        renderGrid();
+    </script>
+</body>
+</html>
