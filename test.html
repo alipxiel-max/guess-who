@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحدي الـ 30 الذكي: من هو؟ 🕵️‍♂️</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background: #121214; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .header { text-align: center; max-width: 600px; margin-bottom: 20px; }
+        .header h1 { color: #38ef7d; font-size: 26px; margin-bottom: 8px; }
+        .header p { color: #aaa; font-size: 14px; }
+
+        /* قوائم التحكم واختيار الكاتوقيري */
+        .controls { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 20px; }
+        .select-style { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #2a2a35; color: white; font-size: 16px; font-weight: bold; text-align: center; cursor: pointer; }
+        
+        /* صندوق اللاعب المختار سرياً */
+        .secret-box { background: #1e1e24; border: 2px dashed #fbc531; border-radius: 12px; padding: 15px; width: 100%; max-width: 500px; text-align: center; font-weight: bold; font-size: 16px; }
+        #chosen-item-name { color: #fbc531; font-size: 19px; }
+
+        /* شبكة العرض (أربع كروت في السطر للابتوب وتتعدل تلقائياً للجوال) */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; width: 100%; max-width: 800px; margin-top: 20px; }
+        
+        /* كرت العنصر */
+        .item-card { background: #1e1e24; border-radius: 10px; overflow: hidden; position: relative; cursor: pointer; transition: all 0.2s ease; border: 2px solid #2a2a35; text-align: center; }
+        .item-card img { width: 100%; height: 110px; object-fit: cover; display: block; filter: grayscale(0); opacity: 1; transition: 0.2s; background: #121214; }
+        .item-card p { padding: 8px; font-size: 13px; font-weight: bold; background: #222; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* تأثير التشطيب والاستبعاد */
+        .item-card.eliminated { border-color: #ea2027; }
+        .item-card.eliminated img { filter: grayscale(1) blur(2px); opacity: 0.15; }
+        .item-card.eliminated p { background: #4d1b1b; color: #888; text-decoration: line-through; }
+
+        /* زر إعادة اللعب */
+        .btn-reset { background: #ea2027; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 20px; width: 100%; max-width: 500px; transition: 0.2s; }
+        .btn-reset:hover { background: #ff3838; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🕵️‍♂️ لعبة التخمين والتشطيب الكبرى</h1>
+        <p>اختر القسم، اسأل خصمك في الحقيقة، واشطب على الكروت المستبعدة بالضغط عليها!</p>
+    </div>
+
+    <div class="controls">
+        <select id="category-selector" class="select-style" onchange="switchCategory()">
+            <option value="footballers">⚽ قسم: لاعبين كرة قدم (30 لاعب)</option>
+            <option value="food">🍕 قسم: أكلات شهية (30 أكلة)</option>
+            <option value="youtubers">🎬 قسم: يوتيوبرز ومشاهير (30 يوتيوبر)</option>
+            <option value="characters">🦸‍♂️ قسم: شخصيات متنوعة (30 شخصية)</option>
+        </select>
+        
+        <div class="secret-box" id="secret-container">
+            💡 اضغط مرتين (Double Tap) على أي كرت لتحديده كـ "اختيارك السري"
+        </div>
+    </div>
+
+    <div class="grid" id="game-grid"></div>
+
+    <button class="btn-reset" onclick="resetGame()">إعادة تصفير اللوحة الحالية 🔄</button>
+
+    <script>
+        // قاعدة البيانات الكبرى - 4 أقسام
+        const gameDatabase = {
+            footballers: [
+                { name: "messi", img: "https://imageio.forbes.com/specials-images/imageserve/663e595b4509f97fdafb95f5/0x0.jpg?format=jpg&crop=383,383,x1045,y23,safe&height=416&width=416&fit=bounds" },
+                { name: "Ronaldo", img: "https://imageio.forbes.com/specials-images/imageserve/645ea1c4fce09061884bd21c/0x0.jpg?format=jpg&crop=2774,2772,x925,y0,safe&height=416&width=416&fit=bounds" },
+                { name: "Neymar", img: "https://images.ctfassets.net/3mv54pzvptwz/7Jj4ryLGJazS8pDUlCK2Vg/0720ffad6fe1c0587dd1f9df0c323b01/54331642772_05fa9ffe6b_o_dentro.jpg" },
+                { name: "suarez", img: "https://www.alyaum.com/uploads/images/2024/02/15/2249012.jpg" },
+                { name: "van dijk", img: "https://ichef.bbci.co.uk/ace/standard/976/cpsprodpb/6112/live/86a9ef20-1b76-11f0-ae04-a7ed40059b9f.jpg.webp" },
+                { name: "salem", img: "https://sportlink.com.sa/wp-content/uploads/2022/06/Salem-Al-Dawsari.jpg" },
+                { name: "coman", img: "https://resources.saudi-pro-league.pulselive.com/photo-resources/2025/08/16/2e246154-987a-4b31-a222-1e18073fd33f/Gya6Bb1bkAAqYSn.jpeg?width=1868&height=1136" },
+                { name: "lewandoski", img: "https://www.fcbarcelona.com/photo-resources/2025/09/10/6dd5aa47-d5fb-45a5-b171-0da82c9c7105/09-Lewandowski.jpg?width=640&height=400" },
+                { name: "vinicius", img: "https://s.yimg.com/ny/api/res/1.2/LiB8H16dK3RcWjEMZExONw--/YXBwaWQ9aGlnaGxhbmRlcjt3PTk2MDtoPTY0MDtjZj13ZWJw/https://media.zenfs.com/en/onefootball_articles_802/e4f539a94989e27251d980dfad0b6093" },
+                { name: "mbappe", img: "https://www.reuters.com/resizer/v2/UEZBDF5MXZJLVMRBSWFJZ6ZCBI.jpg?auth=9a6a5c1942e632b46601abc56feb49d43cba25818bf30db3f62fa2b611681ce9&width=640&quality=80" },
+                { name: "yamal", img: "https://media1.tenor.com/m/g3xi96MFrd0AAAAd/lamine-yamal-lamineyamal.gif" },
+                { name: "belingham", img: "https://cdn.britannica.com/73/276673-050-9BC8EE1D/Jude-Bellingham-with-UEFA-Champions-League-trophy-after-win-June-2024.jpg" },
+                { name: "pedri", img: "https://ichef.bbci.co.uk/ace/standard/800/cpsprodpb/6a1f/live/e13f4ec0-b4dd-11f0-b31a-d15d08f211be.jpg.webp" },
+                { name: "dypala", img: "https://sempreinter.com/wp-content/uploads/2024/06/Paulo-Dybala-Roma-9-825x510.jpg" },
+                { name: "pogba", img: "https://img.lemde.fr/2026/01/22/0/0/2631/1754/556/0/75/0/689dc55_upload-1-3lvemddfplik-000-86kn88e.jpg" },
+                { name: "pele", img: "https://static01.nyt.com/images/2022/12/22/multimedia/00pele-photos-1-32de/00pele-photos-1-32de-superJumbo.jpg?quality=75&auto=webp" },
+                { name: "cruyff", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Johan_Cruijff_%281974%29.jpg" },
+                { name: "noor", img: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Mohammed_Noor_In_the_Saudi_national_team_training.jpg" },
+                { name: "palmer", img: "https://ichef.bbci.co.uk/ace/standard/800/cpsprodpb/db08/live/90166840-a389-11f0-a56f-0b1b78ebdf89.jpg.webp" },
+                { name: "foden", img: "https://i.guim.co.uk/img/media/5ffcda128c221dbfc54ec9f6c74f84212cb90a7c/0_74_2300_1380/master/2300.jpg?width=1900&dpr=1&s=none&crop=none" },
+                { name: "sane", img: "https://assets.goal.com/images/v3/getty-2236778484/crop/MM5DEOJSHA5DCNRUG45G433XMU5DCMRWGM5DCOJT/GettyImages-2236778484.jpg?auto=webp&format=pjpg&width=640&quality=60" },
+                { name: "dembele", img: "https://i.guim.co.uk/img/media/aa7aebc0a6aa9a29d4fc43f1d37160414f10e6ab/603_306_3663_2932/master/3663.jpg?width=1900&dpr=1&s=none&crop=none" },
+                { name: "mane", img: "https://static.srpcdigital.com/styles/1037xauto/public/2025-08/1168556.jpeg.webp" },
+                { name: "lutfalla", img: "https://upload.wikimedia.org/wikipedia/commons/f/fe/Ebrahim_Khalil_Lutfalla.jpg" },
+                { name: "komail alaswad", img: "https://c7.alamy.com/comp/2JC26GJ/kuala-lumpur-malaysia-08th-june-2022-komail-hasan-alaswad-of-bahrain-celebrates-after-scoring-a-goal-during-the-afc-asian-cup-2023-qualifiers-match-between-bahrain-and-bangladesh-at-the-national-stadium-bukit-jalil-final-score-bahrain-20-bangladesh-photo-by-wong-fok-loysopa-imagessipa-usa-credit-sipa-usaalamy-live-news-2JC26GJ.jpg" },
+                { name: "harry kane", img: "https://www.getfootballnewsgermany.com/assets/fc-bayern-munchen-v-bayer-04-leverkusen-bundesliga-1-6-scaled.jpg" },
+                { name: "olise", img: "https://upload.wikimedia.org/wikipedia/commons/e/e2/FC_RB_Salzburg_gegen_FC_Bayern_M%C3%BCnchen_%282026-01-06_Testspiel%29_10.jpg" },
+                { name: "haaland", img: "https://static.srpcdigital.com/styles/1037xauto/public/2025-09/1203851.jpeg.webp" },
+                { name: "karim adeyme", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ3_ICR1cCoPfG2MgnabCfHC5uVwg-IRpFfbiJnhPMTFUs5FyvIQCpcObQ&s=10" },
+                { name: "jamal musiala", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRz8wFvBECyQTQ_PygmSPTz6ORGG0Yv1L71oL7i2y1VNLtmmtGbcUNRgvM&s=10" },
+                { name: "marco rues", img: "https://assets.bundesliga.com/tachyon/sites/2/2020/02/marco-reus-captain-bvb-dortmund.jpg?crop=285px,0px,1350px,1080px&fit=540,540" },
+                { name: "diaz", img: "https://platform.bavarianfootballworks.com/wp-content/uploads/sites/24/2025/08/gettyimages-2231550844.jpg?quality=90&strip=all&crop=0%2C1.6290044468645%2C100%2C96.741991106271&w=2400" },
+                { name: "alromehe", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBIVYu-TPB3p2juttPG-s1l9RyZrGJohICAevVp2RbHaFj1n7tmqhe18w&s=10" },
+                { name: "marhoon", img: "https://pbs.twimg.com/profile_images/1261441649143689217/M_yjHOfM_400x400.jpg" },
+                { name: "eze", img: "https://www.arsenal.com/sites/default/files/styles/desktop_16x9/public/images/eze-headshot-2_oewup9di.png?h=6dff888f&auto=webp&itok=ram_ExM4" },
+                { name: "odegard", img: "https://static.independent.co.uk/2025/02/23/11/c44b1fcc5ad0367e394c3b44efcf5539Y29udGVudHNlYXJjaGFwaSwxNzQwMzk3MzIy-2.79139012.jpg" },
+                { name: "salah", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0LIfxoTCuFgLIrK0LMUySFDw10yFZCQ4yTN3w4pFrUrHoSVUXQEp6QikR&s=10" },
+                { name: "saka", img: "https://www.arsenal.com/sites/default/files/styles/desktop_16x9/public/images/GettyImages-2187028428%20Cropped_ir3r79ux.jpg?h=b78fcb49&auto=webp&itok=OPOwBMt8" },
+                { name: "saliba", img: "https://www.arsenal.com/sites/default/files/styles/desktop_16x9/public/images/SALIBA_Headshot_web_khl9z1vw.png?h=ad73a5fe&auto=webp&itok=Kd_KpCDt" },
+                { name: "alisson", img: "https://i.guim.co.uk/img/media/f90ee885d96f2ff977d9b3fd244d85f4a18eb8cd/126_118_2369_1421/master/2369.jpg?width=1200&quality=85&auto=format&fit=max&s=56ab33a1ef5a70f1238f4c15efe8a311" },
+                { name: "donaruma", img: "https://i.ytimg.com/vi/nMe-HbFebr8/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBex787vKxdsfdk4GIluxDIswTJ0Q" },
+                { name: "rice", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkw9cykgd0hpWyRq3mhqaL73wO3JpNx7V-Oqo3jcwO0c6mUpCEkEZYkrI&s=10" },
+                { name: "garcia", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtRZgfwUcjBtIxPCe6jZqLBhxZKiKjGvG2xajLuOHPGbbPcMXry_4qNvU&s=10" },
+                { name: "courtois", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdJh0Ot1AJJSFQB2QfKk_kwZvkl3h6zSJMkajWYOAcatmTKa1qebpyv8k&s=10" },
+                { name: "valverde", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6CwjnsqIirrtZqLcHhfZE9KM8Crb0gPaQrnnu9VS31YUGngxCuH_-YfI&s=10" },
+                { name: "oblack", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkoAJQyh2stu3Y786qDy-H4ixUD7dp94X7Krh1i_xbVjs1E3uGAh8liuLa&s=10" }, 
+                { name: "de jong", img: "https://preview.redd.it/thoughts-on-frenkie-de-jongs-performance-v0-hwdreuorifee1.jpeg?auto=webp&s=b8c80e0e4f35108984fbcaa6f272758645e8a061" },
+                { name: "raphina", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSamtK72pzuLtHb8zsS_RkqQ6EqOCvQAnCCbUhB8A_1lAVjXvGrx6EQsr4&s=10" },
+                { name: "alvarez", img: "https://i.guim.co.uk/img/media/aa16b0273d872faf04749109fc87d895b08531da/400_0_3690_2952/master/3690.jpg?width=465&dpr=1&s=none&crop=none" },
+                { name: "toliso", img: "https://media.ol.fr/uploads/assets/1000x1000_TOLISSO_Corentin_e08fecfa81.png?twic=v1/contain=800x800" },
+                { name: "vitinha", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQOFQL1ugkpXJjHKGircmU1QO-EZCD4tlAMVFhAGyqYNNZn5iFTF0qccn9d&s=10" },
+                { name: "hakimi", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWqhvijQ3oHjor4MSxqIsFFIiljl6i0mfcJr9WHq4Z94KoyV0cYgiZ4WQ&s=10" },
+                { name: "doue", img: "https://ichef.bbci.co.uk/images/ic/1232x1232/p0lfptm2.jpg" },
+                { name: "giroud", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1LnOXjrBTGmhyDsjbj9Aex68rBzuZaFaGoWlwjRcxbA-c4NIm828tZeXQ&s=10" },
+                { name: "modric", img: "https://tmssl.akamaized.net//images/foto/galerie/luka-modric-ac-mailand-2025-1757415502-177086.jpg" },
+                { name: "openda", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEj9sRuHFh2Q3LoI_1_2VxdI0SdR1zOqLi_7wzqpVh2TYF9YlT0pZysZ4&s=10" },
+                { name: "thuram", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKh1h9zeRPLSmunFGxT8Tg-EuduMh-tXWz3i5ZKbBXhT-v0mO2OOAef78&s=10" },
+                { name: "de bruyne", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjU4A1foEjFyOL0XlGcp4bS0CF6u1QHPH77KBk23YF4zn04s2Uh8Ck60nB&s=10" },
+                { name: "malen", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkQ2-ow3m3D0aP3qm_Ys1ZzNNun44yBSE4MXK3IpusD6woz3C3QRuFZso&s=10" },
+                { name: "sommer", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSpx9TtuhAUyrU6WPjo5JJIxbtZxeJpg3gPQcOo-jcrtQ&s" },
+                { name: "zidane", img: "https://assets.realmadrid.com/is/image/realmadrid/1330190795142?$Mobile$&fit=wrap" },
+                { name: "maldini", img: "https://upload.wikimedia.org/wikipedia/commons/1/1c/PaoloMaldini.jpg" },
+                { name: "buffon", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Gianluigi_Buffon_%2831784615942%29_%28cropped%29.jpg/960px-Gianluigi_Buffon_%2831784615942%29_%28cropped%29.jpg" },
+                { name: "casillas", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQoSQVTBx03_37UuLpCOxFz9TQgWHe3FnwmvVZPLV45jNKWdaSE688NYw&s=10" },
+                { name: "kroos", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK2qEPHfHUEugzG2EmiHKXayCv0SwQLUoAxy3svBCS5G23Ztt9ZULmtX9t&s=10" },
+                { name: "gullit", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKPcOEh6foFKLbt5mPh4sd2YfyeZCWRfy6lXIQdwJLpRhgWhfXJaRu74Ce&s=10" },               
+                { name: "aubameyang", img: "https://s.yimg.com/ny/api/res/1.2/J1khlyXi4vYeWFHRiRz0cw--/YXBwaWQ9aGlnaGxhbmRlcjt3PTY0MDtoPTQyNztjZj13ZWJw/https://media.zenfs.com/en/get_french_football_news_702/71bdfb2af157a2bc470a467fc84d41ae" },                
+                { name: "mahrez", img: "https://resources.saudi-pro-league.pulselive.com/photo-resources/2024/03/05/6820ed9e-57b6-4121-ace4-dfb295f587ea/GettyImages-2046436569.jpg?width=1868&height=1136" },       
+                { name: "maradona", img: "https://upload.wikimedia.org/wikipedia/commons/4/48/Argentina_celebrando_copa_%28cropped%29.jpg" }
+            ],
+            food: [
+                { name: "برجر 🍔", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
+                { name: "بيتزا 🍕", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
+                { name: "مجبوس 🍛", img: "https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400" },
+                { name: "شاورما 🌯", img: "https://images.unsplash.com/photo-1644787157833-28f09d849fa8?w=400" },
+                { name: "سوشي 🍣", img: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400" },
+                { name: "ستيك لحم 🥩", img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400" },
+                { name: "باستا إيطالية 🍝", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400" },
+                { name: "تاكو مكسيكي 🌮", img: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400" },
+                { name: "ورق عنب 🍇", img: "https://images.unsplash.com/photo-1629115913210-9b57577df1cc?w=400" },
+                { name: "نودلز 🍜", img: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400" },
+                { name: "بروستد دجاج 🍗", img: "https://images.unsplash.com/photo-1562967916-eb82221dfb92?w=400" },
+                { name: "كباب 🍡", img: "https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=400" },
+                { name: "فلافل 🧆", img: "https://images.unsplash.com/photo-1547058886-af3b31a9aa7d?w=400" },
+                { name: "كنتاكي / ستريبس 🍟", img: "https://images.unsplash.com/photo-1562967914-608f82629710?w=400" },
+                { name: "برياني 🍚", img: "https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=400" },
+                { name: "هوت دوغ 🌭", img: "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=400" },
+                { name: "لزانيا 🧀", img: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400" },
+                { name: "وافل 🧇", img: "https://images.unsplash.com/photo-1562376502-6f7694998877?w=400" },
+                { name: "كنافة 🍯", img: "https://images.unsplash.com/photo-1517433367423-c7e5b0f35086?w=400" },
+                { name: "بانكيك 🥞", img: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400" },
+                { name: "بيتزا ببروني 🍕", img: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400" },
+                { name: "كرواسون 🥐", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400" },
+                { name: "ضلوع مشوية 🍖", img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400" },
+                { name: "دوناتي 🍩", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400" },
+                { name: "أومليت بالجبن 🍳", img: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400" },
+                { name: "سلطة سيزر 🥗", img: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400" },
+                { name: "روبيان ديناميت 🍤", img: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400" },
+                { name: "بطاطس ودجز 🍟", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400" },
+                { name: "حساء ومشروم 🥣", img: "https://images.unsplash.com/photo-1547592165-e1d17fed6005?w=400" },
+                { name: "آيس كريم 🍦", img: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400" }
+            ],
+            youtubers: [
+                { name: "يوتيوبر 1", img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=150" },
+                { name: "يوتيوبر 2", img: "https://images.unsplash.com/photo-1618519764620-7403abdbfee9?w=150" },
+                { name: "يوتيوبر 3", img: "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=150" },
+                ...Array.from({length: 47}, (_, i) => ({ name: `يوتيوبر ${i+4}`, img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=150" }))
+            ],
+            characters: [
+                { name: "شخصية 1", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+                { name: "شخصية 2", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+                { name: "شخصية 3", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" },
+                ...Array.from({length: 47}, (_, i) => ({ name: `شخصية ${i+4}`, img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" }))
+            ]
+        };
+
+        const grid = document.getElementById('game-grid');
+        const secretContainer = document.getElementById('secret-container');
+        const categorySelector = document.getElementById('category-selector');
+
+        function renderGrid() {
+            grid.innerHTML = "";
+            const currentCategory = categorySelector.value;
+            const items = gameDatabase[currentCategory];
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "item-card";
+                card.innerHTML = `
+                    <img src="${item.img}" alt="${item.name}">
+                    <p>${item.name}</p>
+                `;
+
+                // ضغطة واحدة: تشطيب واستبعاد
+                card.onclick = function() {
+                    card.classList.toggle('eliminated');
+                };
+
+                // ضغطتين متتاليتين: اختيار العنصر السري
+                card.ondblclick = function() {
+                    secretContainer.innerHTML = `🔒 اختيارك السري الحالي: <span id="chosen-item-name">${item.name}</span>`;
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        function switchCategory() {
+            secretContainer.innerHTML = "💡 اضغط مرتين (Double Tap) على أي كرت لتحديده كـ \"اختيارك السري\"";
+            renderGrid();
+        }
+
+        function resetGame() {
+            renderGrid();
+        }
+
+        // تشغيل اللعبة لأول مرة
+        renderGrid();
+    </script>
+</body>
+</html>
