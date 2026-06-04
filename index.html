@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحدي الـ 50 الذكي: من هو؟ 🕵️‍♂️</title>
+    <title>تحدي الـ 30 الذكي: من هو؟ 🕵️‍♂️</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
         body { background: #121214; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -47,10 +47,10 @@
 
     <div class="controls">
         <select id="category-selector" class="select-style" onchange="switchCategory()">
-            <option value="footballers">⚽ قسم: لاعبين كرة قدم (50 لاعب)</option>
-            <option value="food">🍕 قسم: أكلات شهية (50 أكلة)</option>
-            <option value="youtubers">🎬 قسم: يوتيوبرز ومشاهير (50 يوتيوبر)</option>
-            <option value="characters">🦸‍♂️ قسم: شخصيات متنوعة (50 شخصية)</option>
+            <option value="footballers">⚽ قسم: لاعبين كرة قدم (30 لاعب)</option>
+            <option value="food">🍕 قسم: أكلات شهية (30 أكلة)</option>
+            <option value="youtubers">🎬 قسم: يوتيوبرز ومشاهير (30 يوتيوبر)</option>
+            <option value="characters">🦸‍♂️ قسم: شخصيات متنوعة (30 شخصية)</option>
         </select>
         
         <div class="secret-box" id="secret-container">
@@ -63,7 +63,7 @@
     <button class="btn-reset" onclick="resetGame()">إعادة تصفير اللوحة الحالية 🔄</button>
 
     <script>
-        // قاعدة البيانات الكبرى - 4 أقسام في كل قسم 50 قالب جاهز للتعديل
+        // قاعدة البيانات الكبرى - 4 أقسام في كل قسم 30 قالب جاهز للتعديل
         const gameDatabase = {
             footballers: [
                 { name: "messi", img: "https://imageio.forbes.com/specials-images/imageserve/663e595b4509f97fdafb95f5/0x0.jpg?format=jpg&crop=383,383,x1045,y23,safe&height=416&width=416&fit=bounds" },
@@ -88,6 +88,13 @@
                 { name: "foden", img: "https://i.guim.co.uk/img/media/5ffcda128c221dbfc54ec9f6c74f84212cb90a7c/0_74_2300_1380/master/2300.jpg?width=1900&dpr=1&s=none&crop=none" },
                 { name: "sane", img: "https://assets.goal.com/images/v3/getty-2236778484/crop/MM5DEOJSHA5DCNRUG45G433XMU5DCMRWGM5DCOJT/GettyImages-2236778484.jpg?auto=webp&format=pjpg&width=640&quality=60" },
                 { name: "dembele", img: "https://i.guim.co.uk/img/media/aa7aebc0a6aa9a29d4fc43f1d37160414f10e6ab/603_306_3663_2932/master/3663.jpg?width=1900&dpr=1&s=none&crop=none" },
+               { name: "mane", img: "https://static.srpcdigital.com/styles/1037xauto/public/2025-08/1168556.jpeg.webp" },
+               { name: "lutfalla", img: "https://upload.wikimedia.org/wikipedia/commons/f/fe/Ebrahim_Khalil_Lutfalla.jpg" },
+               { name: "komail alaswad", img: "https://c7.alamy.com/comp/2JC26GJ/kuala-lumpur-malaysia-08th-june-2022-komail-hasan-alaswad-of-bahrain-celebrates-after-scoring-a-goal-during-the-afc-asian-cup-2023-qualifiers-match-between-bahrain-and-bangladesh-at-the-national-stadium-bukit-jalil-final-score-bahrain-20-bangladesh-photo-by-wong-fok-loysopa-imagessipa-usa-credit-sipa-usaalamy-live-news-2JC26GJ.jpg" },
+               { name: "harry kane", img: "https://www.getfootballnewsgermany.com/assets/fc-bayern-munchen-v-bayer-04-leverkusen-bundesliga-1-6-scaled.jpg" },
+               { name: "olise", img: "https://upload.wikimedia.org/wikipedia/commons/e/e2/FC_RB_Salzburg_gegen_FC_Bayern_M%C3%BCnchen_%282026-01-06_Testspiel%29_10.jpg" },
+               { name: "haaland", img: "https://static.srpcdigital.com/styles/1037xauto/public/2025-09/1203851.jpeg.webp" },
+               { name: "mahrez", img: "https://static.srpcdigital.com/styles/1037xauto/public/2025-09/1203851.jpeg.webp" },       
                 { name: "maradona", img: "https://upload.wikimedia.org/wikipedia/commons/4/48/Argentina_celebrando_copa_%28cropped%29.jpg" }
             ],
             food: [
